@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	mainpb "grpcchatapp/proto/gen"
 	"log"
 	"net"
+	"os"
 	"sync"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type ChatStream struct {
@@ -85,7 +88,40 @@ func (s *ChatServer) Chat(stream mainpb.ChatService_ChatServer) error {
 	return nil
 }
 
+var messageHistory []*mainpb.ChatMessage //->empty slice pointing to struct(ChatMessage), used to hold all chat messages so far.
+
+func (s *ChatServer) SendMessage(ctx context.Context, msg *mainpb.ChatMessage) (*emptypb.Empty, error) {
+	msg.Timestamp = time.Now().Unix()
+
+	s.mu.Lock()
+	messageHistory = append(messageHistory, msg)
+
+	for id, client := range s.clients {
+		client.ch <- msg
+		log.Printf("Sent message from [%s] to [%s]", msg.SenderName, id)
+	}
+	s.mu.Unlock()
+
+	log.Printf("Message from %s: %s", msg.SenderName, msg.Message)
+
+	return &emptypb.Empty{}, nil
+
+}
+
+func (s *ChatServer) GetMessages(ctx context.Context, _ *emptypb.Empty) (*mainpb.ChatMessages, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return &mainpb.ChatMessages{Messages: messageHistory}, nil
+}
+
 func main() {
+	logFile, err := os.OpenFile("server.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("Failed to open Log file: %v", err)
+	}
+	defer logFile.Close()
+
 	port := ":50051"
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
