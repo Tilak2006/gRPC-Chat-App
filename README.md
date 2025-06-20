@@ -13,6 +13,7 @@ This is a real-time chat app the tech stack used is:
 
 
 **ARCHITECTURE:**
+Here's how the internal architechture looks like
 ![image](https://github.com/user-attachments/assets/821a2793-09c1-4573-bf10-c7d49ca154af)
 
 **BACKEND DESIGN:**
