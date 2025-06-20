@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package main;
+
+option go_package = "proto/gen;mainpb";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+service ChatService {
+  rpc Chat(stream ChatMessage) returns (stream ChatMessage);
+
+  //REST API
+  rpc SendMessage(ChatMessage) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/chat/send"
+      body: "*"
+    };
+  }
+
+  rpc GetMessages(google.protobuf.Empty) returns (ChatMessages) {
+    option (google.api.http) = {
+      get: "/v1/chat/messages"
+    };
+  }
+}
+
+message User {
+  string user_id = 1;
+  string user_name = 2;
+}
+
+message ChatMessage {
+  string sender_id = 1;
+  string sender_name = 2;
+  string message = 3;
+  int64 timestamp = 4;
+}
+
+message ChatMessages {
+  repeated ChatMessage messages = 1;
+}
