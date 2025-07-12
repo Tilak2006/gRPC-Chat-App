@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  grpcserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.grpc
+    ports:
+      - "50051:50051"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - grpcserver
+
+  frontend:
+    build:
+      context: ./frontend/gRPC-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway
